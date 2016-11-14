@@ -2,30 +2,30 @@
 # Imports
 #----------------------------------------------------------------------------#
 
-from flask import Flask, render_template, request
-# from flask.ext.sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, Response
+from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
 from forms import *
 import os
-
+ 
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
 
 app = Flask(__name__)
 app.config.from_object('config')
-#db = SQLAlchemy(app)
+db = SQLAlchemy(app)
 
 # Automatically tear down SQLAlchemy.
-'''
+
 @app.teardown_request
 def shutdown_session(exception=None):
-    db_session.remove()
-'''
+    db.session.remove()
+
 
 # Login required decorator.
-'''
+
 def login_required(test):
     @wraps(test)
     def wrap(*args, **kwargs):
@@ -35,7 +35,7 @@ def login_required(test):
             flash('You need to login first.')
             return redirect(url_for('login'))
     return wrap
-'''
+
 #----------------------------------------------------------------------------#
 # Controllers.
 #----------------------------------------------------------------------------#
@@ -67,6 +67,22 @@ def register():
 def forgot():
     form = ForgotForm(request.form)
     return render_template('forms/forgot.html', form=form)
+
+@app.route('/event', methods=['POST'])
+def ingestion():
+    from models import Event
+    event = Event(request.form.get('event'))
+    db.session.add(event)
+    db.session.commit()
+    return Response('True'), 200
+
+@app.route('/data', methods=['GET'])
+def data():
+    from models import Event
+    Events = Event.query.all()
+    for event in Events:   
+       print(event.id)
+    return Response(''), 200
 
 # Error handlers.
 
